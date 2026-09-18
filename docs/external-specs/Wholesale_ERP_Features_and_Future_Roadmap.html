@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vignesh GrowthLab Wholesale ERP — Complete Feature Catalog & Future Roadmap</title>
+  <style>
+    :root {
+      --primary: #1e40af;
+      --primary-light: #3b82f6;
+      --dark: #0f172a;
+      --text: #334155;
+      --light-bg: #f8fafc;
+      --border: #e2e8f0;
+      --accent: #059669;
+      --gold: #d97706;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--text);
+      background: #f1f5f9;
+      padding: 30px 15px;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
+      color: white;
+      padding: 40px 35px;
+      position: relative;
+    }
+    .badge {
+      display: inline-block;
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 12px;
+      border-radius: 20px;
+      margin-bottom: 12px;
+    }
+    header h1 {
+      font-size: 30px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    header p {
+      font-size: 15px;
+      color: #bfdbfe;
+      max-width: 700px;
+    }
+    .meta-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 20px;
+      background: #0f172a;
+      color: #94a3b8;
+      padding: 14px 35px;
+      font-size: 13px;
+    }
+    .meta-bar span strong {
+      color: #f8fafc;
+    }
+    .content {
+      padding: 35px;
+    }
+    h2 {
+      font-size: 22px;
+      color: var(--dark);
+      margin-top: 35px;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    h2:first-of-type { margin-top: 0; }
+    h3 {
+      font-size: 17px;
+      color: var(--primary);
+      margin-top: 22px;
+      margin-bottom: 8px;
+    }
+    p, ul {
+      margin-bottom: 14px;
+      font-size: 14.5px;
+    }
+    ul {
+      padding-left: 20px;
+    }
+    li {
+      margin-bottom: 6px;
+    }
+    .module-card {
+      background: var(--light-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 18px;
+      transition: transform 0.15s ease;
+    }
+    .module-card h4 {
+      font-size: 16px;
+      color: var(--dark);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .module-card .tag {
+      background: #e0e7ff;
+      color: #3730a3;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 18px 0;
+      font-size: 14px;
+    }
+    th, td {
+      padding: 11px 14px;
+      text-align: left;
+      border: 1px solid var(--border);
+    }
+    th {
+      background: var(--light-bg);
+      font-weight: 700;
+      color: var(--dark);
+    }
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    .roadmap-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 15px;
+    }
+    .roadmap-card {
+      background: #ffffff;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      border-top: 4px solid var(--primary-light);
+    }
+    .roadmap-card.phase-1 { border-top-color: #3b82f6; }
+    .roadmap-card.phase-2 { border-top-color: #8b5cf6; }
+    .roadmap-card.phase-3 { border-top-color: #ec4899; }
+    .roadmap-card.phase-4 { border-top-color: #10b981; }
+    .roadmap-card h4 {
+      font-size: 15px;
+      color: var(--dark);
+      margin-bottom: 8px;
+    }
+    .roadmap-card ul {
+      margin: 0;
+      padding-left: 18px;
+      font-size: 13.5px;
+    }
+    .highlight-box {
+      background: #eff6ff;
+      border-left: 4px solid var(--primary-light);
+      padding: 14px 18px;
+      border-radius: 0 8px 8px 0;
+      margin: 18px 0;
+      font-size: 14px;
+    }
+    .print-btn {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      padding: 12px 22px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(37,99,235,0.4);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+    .print-btn:hover {
+      background: #1d4ed8;
+      transform: translateY(-2px);
+    }
+    @media print {
+      body { background: white; padding: 0; }
+      .container { box-shadow: none; border: none; max-width: 100%; }
+      .print-btn { display: none; }
+      .module-card { break-inside: avoid; }
+      .roadmap-card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="print-btn" onclick="window.print()">
+    🖨️ Print / Save as PDF
+  </button>
+
+  <div class="container">
+    <header>
+      <div class="badge">Vignesh GrowthLab Enterprise Suite</div>
+      <h1>Vignesh GrowthLab Wholesale ERP</h1>
+      <p>A high-performance wholesale distribution, inventory management, multi-warehouse logistics, and statutory Indian GST compliance platform engineered by Vignesh GrowthLab.</p>
+    </header>
+
+    <div class="meta-bar">
+      <span><strong>Brand:</strong> Vignesh GrowthLab (VGL)</span>
+      <span><strong>Stack:</strong> FastAPI + React 18 + MariaDB</span>
+      <span><strong>Architecture:</strong> True FIFO + Double-Entry General Ledger</span>
+      <span><strong>Compliance:</strong> Indian GST, ClearTax IRN & E-Way Bill</span>
+      <span><strong>Version:</strong> 1.0.0 Enterprise Release</span>
+    </div>
+
+    <div class="content">
+
+      <h2>📦 Executive Summary</h2>
+      <p>
+        The <strong>Vignesh GrowthLab Wholesale ERP</strong> is an enterprise-grade ERP designed specifically for wholesale stockists, distributors, multi-branch trading businesses, and logistics companies operating under Indian tax and statutory compliance laws. Built on a resilient FastAPI and MariaDB foundation with over 65 relational tables, it guarantees atomic row-level transaction safety, zero-drift inventory tracking, and full auditability.
+      </p>
+
+      <h2>🏛️ Complete Module Inventory (All 10 Core Modules)</h2>
+
+      <div class="module-card">
+        <h4>1. Settings & System Master Configuration <span class="tag">Module 1</span></h4>
+        <ul>
+          <li><strong>Corporate Master:</strong> Company legal name, registered GSTIN, state code, PAN, CIN, and address.</li>
+          <li><strong>Bank & UPI Profile:</strong> Company bank account details (IFSC, Account Number, Branch) and UPI ID.</li>
+          <li><strong>Atomic Document Sequences:</strong> Row-locked sequence generator with financial year prefixes (e.g. <code>GLB/26-27/001</code>) preventing duplicate invoice numbers.</li>
+          <li><strong>Dynamic Branding:</strong> Company logo and authorized signature upload rendered on all printable invoices and Delivery Challans.</li>
+          <li><strong>Per-User Page Permissions:</strong> Granular feature access control allowing admins to customize sidebar visibility per employee.</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <h4>2. Products & Inventory Management <span class="tag">Module 2</span></h4>
+        <ul>
+          <li><strong>HSN Validation:</strong> Strict validation of 4, 6, or 8 digit numeric HSN codes with default GST tax slab mapping.</li>
+          <li><strong>4-Tier Pricing Structure:</strong> Segregated price tiers: <code>purchase_cost</code> (procurement), <code>b2b_price</code> (wholesale), <code>b2c_price</code> (retail), and <code>mrp</code>.</li>
+          <li><strong>Cost-Floor Guard:</strong> Enforces price hierarchy (Cost ≤ B2B ≤ B2C ≤ MRP) preventing below-cost invoicing errors.</li>
+          <li><strong>Effective-Dated Scheduled Prices:</strong> Schedule price increases or decreases in advance; automatically activates when the effective date arrives.</li>
+          <li><strong>True FIFO Stock Layer Valuation:</strong> Inward batches are tracked in <code>stock_entries</code> with individual purchase costs, depleted in chronological FIFO order during sales.</li>
+          <li><strong>Below-Cost & Margin Alerts:</strong> Real-time in-app alerts alerting managers of low-margin sales or cost price spikes.</li>
+          <li><strong>Bulk Operations:</strong> Mass CSV/Excel product catalog import and bulk price update tools.</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <h4>3. Multi-Warehouse Management & Logistics <span class="tag">Module 3</span></h4>
+        <ul>
+          <li><strong>Multi-Location Tracking:</strong> Unlimited physical warehouses, regional hubs, and stockpoints.</li>
+          <li><strong>Warehouse-Specific Banking:</strong> Configure local bank accounts or UPI IDs for regional branches on printouts.</li>
+          <li><strong>Delivery Challan (DC) Transfers:</strong> Complete inter-warehouse transfer workflow: stock reservation at source → in-transit tracking → destination inspection & confirmation (or rejection & auto-restoration).</li>
+          <li><strong>Physical Stock Adjustments:</strong> Audit tools for inventory count variance (Adjustment In adds FIFO batch; Adjustment Out consumes FIFO).</li>
+          <li><strong>Stock Write-Off Workflow:</strong> Governance workflow for damaged or expired items requiring admin approval, auto-posting loss journals to the General Ledger.</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <h4>4. Purchases & Vendor Management (Procure-to-Pay) <span class="tag">Module 4</span></h4>
+        <ul>
+          <li><strong>Vendor Master with GSTIN Auto-Fetch:</strong> Direct ClearTax API lookup auto-populates legal vendor business name and state code.</li>
+          <li><strong>Purchase Bill Entry:</strong> Inward bill capture with duplicate invoice number detection and automatic Intra-State (CGST+SGST) vs Inter-State (IGST) tax calculation.</li>
+          <li><strong>FIFO Layer Creation:</strong> Every purchase entry generates a tracked FIFO layer and updates product cost history.</li>
+          <li><strong>Double-Entry Posting:</strong> Automatically debits Stock-in-Trade & Input Tax Credit (ITC) while crediting Sundry Creditors (Vendor).</li>
+          <li><strong>FIFO Payment Allocation:</strong> Allocates payments across vendor bills oldest-first with advances tracking.</li>
+          <li><strong>Protected Cancellation / Voids:</strong> Voiding a purchase reverses inventory, ledger, and tax credit (guarded against already-consumed stock).</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <h4>5. Sales, Billing & Invoicing (Order-to-Cash) <span class="tag">Module 5</span></h4>
+        <ul>
+          <li><strong>Customer Master & Credit Limits:</strong> Customer profiles with credit ceilings, payment terms (days), and multiple delivery addresses.</li>
+          <li><strong>Quotations & Estimates:</strong> Instant price quotes convertible into active B2B or B2C tax invoices with 1 click.</li>
+          <li><strong>Tax Invoices (B2B & B2C):</strong> Real-time warehouse stock checks, credit limit validation, serial numbers, discounts, and round-off calculation.</li>
+          <li><strong>FIFO COGS Capture:</strong> Freezes historical FIFO cost on each invoice item to compute exact gross profit margins.</li>
+          <li><strong>Credit Notes (Sales Returns):</strong> Restores goods into inventory as <code>return_in</code>, reverses GST liability, and credits customer balance.</li>
+          <li><strong>A4 Printable Invoices:</strong> Clean layout with GST breakup summary, declarations, bank details, and E. & O.E.</li>
+          <li><strong>WhatsApp Invoice Sharing:</strong> Formatted WhatsApp text with Indian rupee formatting (<code>₹12,34,567.89</code>) and direct web links.</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <h4>6. Financial Accounting & General Ledger <span class="tag">Module 6</span></h4>
+        <ul>
+          <li><strong>Standard Indian Chart of Accounts:</strong> Pre-configured heads for Assets, Liabilities, Equity, Revenue, and Expenses.</li>
+          <li><strong>Automated Double-Entry Posting:</strong> Every commercial transaction auto-posts balanced debit/credit journal entries in real time.</li>
+          <li><strong>Receivables Ageing Buckets:</strong> Breakdown into <code>0-30</code>, <code>31-60</code>, <code>61-90</code>, and <code>90+ days</code> with Collection Priority Scoring.</li>
+          <li><strong>Daily Cash Closing:</strong> Reconciles opening cash + daily receipts − cash expenses with physical cash count verification.</li>
+          <li><strong>Expense Approval Workflow:</strong> Expenses above a configurable threshold (e.g. ₹5,000) require admin sign-off before posting.</li>
+          <li><strong>TDS & Form 26AS:</strong> Withholding tax tracking across sections 194C, 194J, and 194Q with Form 26AS reconciliation.</li>
+          <li><strong>Live Trial Balance:</strong> On-demand balanced trial balance across any custom date range or financial year.</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <h4>7. Statutory Taxation (GST, E-Invoice & E-Way Bill) <span class="tag">Module 7</span></h4>
+        <ul>
+          <li><strong>ClearTax Cloud Integration:</strong> Supports live government portal integration or deterministic sandbox mock mode.</li>
+          <li><strong>E-Invoicing (IRN & QR):</strong> 1-click IRN generation and signed QR code persistence for B2B invoices with 24-hour cancellation rule.</li>
+          <li><strong>E-Way Bill Logistics:</strong> Generates E-Way bills with vehicle master data, transporter IDs, and distance calculations.</li>
+          <li><strong>GST Returns:</strong> GSTR-1 outward supplies breakdown, GSTR-2B inward reconciliation vs purchases, and GSTR-3B monthly tax summary.</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <h4>8. Banking & Treasury Management <span class="tag">Module 8</span></h4>
+        <ul>
+          <li><strong>Cheque Register:</strong> Complete lifecycle (<code>Received</code> → <code>Deposited</code> → <code>Cleared</code> / <code>Bounced</code>). Bouncing auto-reverses ledger entries.</li>
+          <li><strong>Bank Statement Reconciliation:</strong> Import bank statement CSV/Excel files and auto-match transactions against accounting ledger entries by date and amount.</li>
+          <li><strong>Bank Stock Statement (Drawing Power):</strong> Valuates FIFO stock, filters eligible debtors (<90 days), and generates banker-certified Drawing Power (DP) certificates for Cash Credit (CC) limits.</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <h4>9. Executive Reports & Analytics <span class="tag">Module 9</span></h4>
+        <ul>
+          <li><strong>Live Management Dashboard:</strong> Isolated resilient queries reporting Revenue, Receivables, Payables, Cash in Hand, and Stock Value.</li>
+          <li><strong>P&L Statement:</strong> Gross Profit (Revenue − FIFO COGS) and Net Profit (deducting operating expenses).</li>
+          <li><strong>Inventory Valuation:</strong> Side-by-side comparison of FIFO valuation vs replacement/latest purchase cost.</li>
+          <li><strong>Day Book:</strong> Chronological register of all sales, purchases, receipts, and payments for any single day.</li>
+        </ul>
+      </div>
+
+      <div class="module-card">
+        <h4>10. Security, RBAC & Audit Governance <span class="tag">Module 10</span></h4>
+        <ul>
+          <li><strong>Role-Based Access Control:</strong> 5 roles (<code>super_admin</code>, <code>admin</code>, <code>accountant</code>, <code>sales</code>, <code>warehouse</code>) with warehouse scoping.</li>
+          <li><strong>Session & Security Controls:</strong> JWT access & refresh tokens, active device session manager, force logout, and brute-force lockout.</li>
+          <li><strong>Audit Trail (ActivityLog):</strong> Immutable logs tracking user actions, IP addresses, and data changes for complete traceability.</li>
+          <li><strong>DPDP Act Ready:</strong> Compliant data retention policies and user privacy erasure controls.</li>
+        </ul>
+      </div>
+
+      <h2>🚀 Future Expansion Roadmap</h2>
+      <p>The Wholesale ERP architecture is designed with clean modular interfaces to support the following upcoming features:</p>
+
+      <div class="roadmap-grid">
+        <div class="roadmap-card priority-high">
+          <h4>1. Online Payment Gateway (Razorpay / Cashfree)</h4>
+          <p>Instant SMS/WhatsApp payment links and webhook listeners that auto-create Customer Receipts and settle invoice balances in real time.</p>
+        </div>
+
+        <div class="roadmap-card priority-high">
+          <h4>2. Dynamic NPCI UPI QR on Invoices</h4>
+          <p>Printed dynamic UPI QR codes containing the invoice reference and exact payable amount for scan-and-pay via Google Pay, PhonePe, and Paytm.</p>
+        </div>
+
+        <div class="roadmap-card priority-high">
+          <h4>3. WhatsApp Business Cloud API Bot</h4>
+          <p>Automated invoice delivery, dispatch alerts, overdue payment reminders, and customer self-service ledger statements via WhatsApp.</p>
+        </div>
+
+        <div class="roadmap-card priority-gold">
+          <h4>4. Tally Prime / ERP 9 Two-Way Sync</h4>
+          <p>Direct XML/ODBC export bridge to transfer sales, purchases, and journals into Tally Prime without manual re-entry for external auditors.</p>
+        </div>
+
+        <div class="roadmap-card priority-gold">
+          <h4>5. Mobile Barcode & RFID Warehouse Scanner</h4>
+          <p>Handheld barcode scanner and mobile camera app for Goods Receipt (GRN), cycle counts, and zero-error dispatch order picking.</p>
+        </div>
+
+        <div class="roadmap-card">
+          <h4>6. Temporal Regulatory Configuration Engine</h4>
+          <p>Effective-dated tax rules and thresholds stored in the database so historical invoices always calculate with the exact statutory laws of that date.</p>
+        </div>
+
+        <div class="roadmap-card">
+          <h4>7. AI Demand & Inventory Forecasting</h4>
+          <p>Predictive consumption analysis evaluating sales velocity, seasonality, and vendor lead times to generate smart Reorder POs before stockouts occur.</p>
+        </div>
+
+        <div class="roadmap-card">
+          <h4>8. B2B Customer & Vendor Self-Service Portals</h4>
+          <p>Dedicated client portal where wholesale buyers can place orders, view invoices, download statements, and track dispatch shipments.</p>
+        </div>
+      </div>
+
+      <h2>💼 Commercial Market Quotation Reference</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Solution Package</th>
+            <th>One-Time License</th>
+            <th>Cloud SaaS / Subscription</th>
+            <th>Annual Maintenance (AMC)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Wholesale Enterprise ERP</strong> (10 Modules)</td>
+            <td>₹1,80,000 – ₹3,50,000</td>
+            <td>₹4,500 – ₹8,000 / mo</td>
+            <td>₹25,000 – ₹45,000 / yr</td>
+          </tr>
+          <tr>
+            <td><strong>Cargo Logistics Management ERP</strong></td>
+            <td>₹90,000 – ₹1,75,000</td>
+            <td>₹2,500 – ₹4,500 / mo</td>
+            <td>₹15,000 – ₹25,000 / yr</td>
+          </tr>
+          <tr>
+            <td><strong>Complete Supply Chain Suite</strong> (Both ERPs)</td>
+            <td>₹2,50,000 – ₹4,50,000</td>
+            <td>₹6,500 – ₹10,500 / mo</td>
+            <td>₹35,000 – ₹55,000 / yr</td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div>
+  </div>
+
+</body>
+</html>
