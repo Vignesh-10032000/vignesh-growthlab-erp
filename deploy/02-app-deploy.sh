@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
 #
-# Wholesale ERP — application deploy / update (CloudPanel / Debian 13)
-# Usage (run as the matching SITE USER, NOT root):
-#     ssh gtferp@37.221.199.121      "bash ~/02-app-deploy.sh prod"
-#     ssh gtferp-dev@37.221.199.121  "bash ~/02-app-deploy.sh dev"
+# VGL ERP — Application Deploy / Update (CloudPanel / Debian 13)
+# Author: Vignesh Prabhu M (Vignesh Growth Lab)
 #
 # Re-runnable: first run clones + builds; later runs pull + rebuild.
 # Does NOT touch systemd (root) or nginx (CloudPanel UI) — see DEPLOY.md.
@@ -12,17 +10,17 @@ set -euo pipefail
 ENV="${1:-}"
 case "$ENV" in
   prod)
-    SITE_USER="gtferp"
-    DOMAIN="erp.globaltradeforce.com"
+    SITE_USER="vglerp"
+    DOMAIN="${DOMAIN:-erp.vigneshgrowthlab.dev}"
     BRANCH="main"
     ENV_TEMPLATE=".env.production.template"
     VITE_MODE="production"
     SERVICE="erp-backend"
     ;;
   dev)
-    SITE_USER="gtferp-dev"
-    DOMAIN="dev.erp.globaltradeforce.com"
-    BRANCH="dev"
+    SITE_USER="vglerp-dev"
+    DOMAIN="${DOMAIN:-dev.erp.vigneshgrowthlab.dev}"
+    BRANCH="main"
     ENV_TEMPLATE=".env.dev.template"
     VITE_MODE="dev"
     SERVICE="erp-backend-dev"
@@ -31,8 +29,8 @@ case "$ENV" in
     echo "Usage: $0 <prod|dev>"; exit 2 ;;
 esac
 
-REPO="https://github.com/iboomdev/GTF.git"
-APP_DIR="/home/${SITE_USER}/GTF"
+REPO="${REPO:-https://github.com/Vignesh-10032000/vignesh-growthlab-erp.git}"
+APP_DIR="${APP_DIR:-/home/${SITE_USER}/vgl-erp}"
 PY_VERSION="3.12"
 
 echo "============================================================"

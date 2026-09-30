@@ -1,28 +1,29 @@
-# Wholesale ERP — DEV backend (systemd unit)
+# VGL ERP — DEV backend (systemd unit)
+# Author: Vignesh Prabhu M (Vignesh Growth Lab)
 # Install as root:
 #   sudo cp deploy/erp-backend-dev.service /etc/systemd/system/erp-backend-dev.service
 #   sudo systemctl daemon-reload
 #   sudo systemctl enable --now erp-backend-dev
 #   journalctl -u erp-backend-dev -f
 #
-# Runs alongside prod (erp-backend on :8000). DEV listens on :8001 as gtferp-dev.
+# Runs alongside prod (erp-backend on :8000). DEV listens on :8001 as vglerp-dev.
 
 [Unit]
-Description=Wholesale ERP FastAPI backend - DEV (uvicorn)
+Description=VGL ERP FastAPI backend - DEV (uvicorn)
 After=network.target mysql.service
 Wants=network.target
 
 [Service]
 Type=simple
-User=gtferp-dev
-Group=gtferp-dev
-WorkingDirectory=/home/gtferp-dev/GTF/backend
+User=vglerp-dev
+Group=vglerp-dev
+WorkingDirectory=/home/vglerp-dev/vgl-erp/backend
 
 # Run _auto_migrate() once, single-process, before workers fork (avoids the
 # concurrent ALTER TABLE race documented in the prod unit).
-ExecStartPre=/home/gtferp-dev/GTF/backend/venv/bin/python -c "from app.main import _auto_migrate; _auto_migrate()"
+ExecStartPre=/home/vglerp-dev/vgl-erp/backend/venv/bin/python -c "from app.main import _auto_migrate; _auto_migrate()"
 
-ExecStart=/home/gtferp-dev/GTF/backend/venv/bin/uvicorn app.main:app \
+ExecStart=/home/vglerp-dev/vgl-erp/backend/venv/bin/uvicorn app.main:app \
     --host 127.0.0.1 --port 8001 --workers 2 --proxy-headers \
     --forwarded-allow-ips=127.0.0.1
 

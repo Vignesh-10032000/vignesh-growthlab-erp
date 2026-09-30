@@ -1,6 +1,7 @@
-# Vignesh GrowthLab Wholesale ERP — Complete Enterprise Suite
-
-> A modern, full-featured Wholesale Enterprise Resource Planning (ERP) platform purpose-built for Indian wholesale distributors, CCTV/security installation contractors, and tech retail enterprises.
+# VGL ERP — Complete Enterprise Suite
+> **Lead Architect & Developer:** Vignesh Prabhu M (Vignesh Growth Lab)  
+> **Repository:** [https://github.com/Vignesh-10032000/vignesh-growthlab-erp](https://github.com/Vignesh-10032000/vignesh-growthlab-erp)  
+> **Brand:** VGL ERP — Modern Wholesale & Retail Enterprise Platform
 
 🌐 **Live Production App:** [https://erp.vigneshgrowthlab.dev/](https://erp.vigneshgrowthlab.dev/)  
 🔑 **Demo Login:** `admin` | **Password:** `Admin@1234` (Role: Super Admin)

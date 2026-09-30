@@ -1,14 +1,17 @@
-# Wholesale ERP — Deployment (CloudPanel / Debian 13)
+# VGL ERP — Deployment & Infrastructure Guide
+> **Lead Architect & Developer:** Vignesh Prabhu M (Vignesh Growth Lab)  
+> **Repository:** https://github.com/Vignesh-10032000/vignesh-growthlab-erp.git  
+> **Brand:** VGL ERP — Modern Wholesale & Retail Enterprise Suite
 
-Two environments on one CloudPanel server (`37.221.199.121`), Percona MySQL 8.4,
+Two environments on CloudPanel server (`37.221.199.121`), Percona MySQL 8.4,
 nginx reverse proxy, Let's Encrypt SSL. Each is an isolated CloudPanel site.
 
 | | **PROD** | **DEV** |
 |---|---|---|
-| Domain | `erp.globaltradeforce.com` | `dev.erp.globaltradeforce.com` |
-| Git branch | `main` | `dev` |
-| Site user | `gtferp` | `gtferp-dev` |
-| App dir | `/home/gtferp/GTF` | `/home/gtferp-dev/GTF` |
+| Domain | `erp.vigneshgrowthlab.dev` | `dev.erp.vigneshgrowthlab.dev` |
+| Git branch | `main` | `main` |
+| Site user | `vglerp` | `vglerp-dev` |
+| App dir | `/home/vglerp/vgl-erp` | `/home/vglerp-dev/vgl-erp` |
 | Backend port | `127.0.0.1:8000` | `127.0.0.1:8001` |
 | systemd service | `erp-backend` | `erp-backend-dev` |
 | Database | `wholesaleerp` / `erpuser` | `wholesaleerpdev` / `erpuserdev` |
@@ -18,10 +21,10 @@ nginx reverse proxy, Let's Encrypt SSL. Each is an isolated CloudPanel site.
 | service unit | `deploy/erp-backend.service` | `deploy/erp-backend-dev.service` |
 
 ```
-                          ┌─ erp.globaltradeforce.com ──── nginx ─┬─ / → /home/gtferp/GTF/frontend/dist
+                          ┌─ erp.vigneshgrowthlab.dev ──── nginx ─┬─ / → /home/vglerp/vgl-erp/frontend/dist
                           │                                       └─ /api,/uploads → 127.0.0.1:8000  (erp-backend)
 Browser ──https──▶ CloudPanel
-                          │  dev.erp.globaltradeforce.com ─ nginx ─┬─ / → /home/gtferp-dev/GTF/frontend/dist
+                          │  dev.erp.vigneshgrowthlab.dev ─ nginx ─┬─ / → /home/vglerp-dev/vgl-erp/frontend/dist
                           └                                        └─ /api,/uploads → 127.0.0.1:8001  (erp-backend-dev)
                                               │
                                      Percona MySQL 8.4  ── wholesaleerp + wholesaleerpdev
@@ -62,17 +65,17 @@ CloudPanel → **Databases → Add Database**
 
 ### Step 4 — Deploy the app  (as the site user)
 ```powershell
-cd C:\Sindhu\D\WholesaleERPModule\wholesale-erp-final-build
+cd "D:\vgl work station\BOOMERM\BOOMERM\GTF-main"
 # DEV:
-scp deploy/02-app-deploy.sh gtferp-dev@37.221.199.121:~/
-ssh gtferp-dev@37.221.199.121 "bash ~/02-app-deploy.sh dev"
+scp deploy/02-app-deploy.sh vglerp-dev@37.221.199.121:~/
+ssh vglerp-dev@37.221.199.121 "bash ~/02-app-deploy.sh dev"
 # PROD:
-scp deploy/02-app-deploy.sh gtferp@37.221.199.121:~/
-ssh gtferp@37.221.199.121 "bash ~/02-app-deploy.sh prod"
+scp deploy/02-app-deploy.sh vglerp@37.221.199.121:~/
+ssh vglerp@37.221.199.121 "bash ~/02-app-deploy.sh prod"
 ```
 First run clones + builds the venv, then **stops** to have you fill `backend/.env`:
 ```bash
-cd /home/<USER>/GTF/backend
+cd /home/<USER>/vgl-erp/backend
 python -c "import secrets; print(secrets.token_urlsafe(48))"   # copy
 nano .env        # set SECRET_KEY=<that> and the DB password in DATABASE_URL
 ```
