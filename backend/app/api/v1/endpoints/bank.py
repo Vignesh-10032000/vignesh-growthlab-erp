@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends, Query, UploadFile, File
+from fastapi import APIRouter, Depends, Query, UploadFile, File, HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.models import User
-from app.core.security import get_current_user, require_admin, require_admin_or_accountant
+from app.core.security import get_current_user, require_admin, require_admin_or_accountant, require_super_admin
 from app.schemas.bank import (
     BankStockStatementCreate, BankReconciliationImport,
     NotificationSettingsUpdate, ScheduledReportSettings,
@@ -106,3 +106,42 @@ backup_router = APIRouter(prefix="/backup", tags=["backup"])
 @backup_router.get("/status")
 async def get_backup_status(_: User = Depends(require_admin)):
     return BackupService.get_status()
+
+
+@notification_router.get("/")
+async def my_notifications(db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    from app.models.models import UserNotification
+    from app.services.automation_service import eligible
+    rows = db.query(UserNotification).filter(UserNotification.user_id == user.id).order_by(UserNotification.id.desc()).all()
+    visible = [r for r in rows if eligible(user, r.page_key, r.event_key.startswith("report:monthly_pnl"), r.warehouse_id)]
+    return {"unread_count": sum(not r.is_read for r in visible), "items": [
+        {"id": r.id, "subject": r.subject, "body": r.body, "is_read": r.is_read,
+         "email_status": r.email_status, "created_at": r.created_at} for r in visible[:50]]}
+
+
+@notification_router.patch("/{notification_id}/read")
+async def read_notification(notification_id: int, db: Session = Depends(get_db), user: User = Depends(get_current_user)):
+    from app.models.models import UserNotification
+    row = db.query(UserNotification).filter_by(id=notification_id, user_id=user.id).first()
+    if not row:
+        raise HTTPException(404, "Notification not found")
+    row.is_read = True
+    db.commit()
+    return {"id": row.id, "is_read": True}
+
+
+@scheduled_router.get("/status")
+async def scheduled_status(db: Session = Depends(get_db), user: User = Depends(require_admin)):
+    from app.models.models import AutomationJob
+    from app.core.config import settings
+    rows = db.query(AutomationJob).order_by(AutomationJob.key.desc()).limit(30).all()
+    return {"scheduler_enabled": settings.AUTOMATION_ENABLED, "email_delivery_enabled": settings.AUTOMATION_EMAIL_ENABLED,
+            "timezone": "Asia/Kolkata", "jobs": [{"key": r.key, "status": r.status, "attempts": r.attempts,
+            "last_error": r.last_error, "completed_at": r.completed_at} for r in rows]}
+
+
+@backup_router.post("/run")
+async def run_backup(user: User = Depends(require_super_admin)):
+    import asyncio
+    from app.services.automation_service import BackupRunner
+    return await asyncio.to_thread(BackupRunner.run_manual)

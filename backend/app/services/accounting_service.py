@@ -197,6 +197,16 @@ class ChequeService:
 class CashClosingService:
 
     @staticmethod
+    def _opening_amount(db, closing_date, financial_year):
+        from app.models.models import JournalEntry, JournalLine, Account
+        lines = db.query(JournalLine).join(JournalEntry).join(Account).filter(
+            Account.account_code == "CASH", JournalEntry.reference_type == "opening_balance",
+            JournalEntry.financial_year == financial_year, JournalEntry.entry_date <= closing_date,
+            JournalEntry.is_cancelled == False,
+        ).all()
+        return sum((line.amount if line.transaction_type == "debit" else -line.amount for line in lines), Decimal("0"))
+
+    @staticmethod
     def get_current(db: Session, closing_date: date) -> dict:
         """Get or prepare today's cash closing."""
         existing = db.query(CashClosing).filter(CashClosing.closing_date == closing_date).first()
@@ -209,8 +219,8 @@ class CashClosingService:
             CashClosing.status == CashClosingStatus.approved
         ).order_by(desc(CashClosing.closing_date)).first()
 
-        opening = prev.closing_balance if prev else Decimal("0")
         fy = get_financial_year(closing_date)
+        opening = prev.closing_balance if prev else CashClosingService._opening_amount(db, closing_date, fy)
 
         # Calculate today's movements
         receipts = db.query(func.sum(CustomerPayment.amount)).filter(
@@ -282,8 +292,8 @@ class CashClosingService:
             CashClosing.closing_date < closing_date,
             CashClosing.status == CashClosingStatus.approved,
         ).order_by(desc(CashClosing.closing_date)).first()
-        opening = prev.closing_balance if prev else Decimal("0")
         fy = get_financial_year(closing_date)
+        opening = prev.closing_balance if prev else CashClosingService._opening_amount(db, closing_date, fy)
 
         receipts = db.query(func.sum(CustomerPayment.amount)).filter(
             CustomerPayment.payment_date == closing_date,

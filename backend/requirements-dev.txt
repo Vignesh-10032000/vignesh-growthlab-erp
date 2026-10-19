@@ -1,0 +1,5 @@
+pytest>=8,<10
+requests>=2.31,<3
+sympy>=1.13,<2
+hypothesis>=6,<7
+aiosmtpd>=1.4,<2

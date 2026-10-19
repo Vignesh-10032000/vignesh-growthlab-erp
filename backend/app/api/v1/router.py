@@ -1,4 +1,5 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from app.core.page_access import require_page_access
 from app.api.v1.endpoints import (
     auth, users, products, purchase, billing,
     warehouse, accounting, gst, reports, bank, security, settings,
@@ -7,6 +8,8 @@ from app.api.v1.endpoints import (
 
 api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth.router)
+api_router.include_router(security.twofa_router)
+api_router.dependencies.append(Depends(require_page_access))
 api_router.include_router(users.router)
 api_router.include_router(products.cat_router)
 api_router.include_router(products.router)
@@ -47,7 +50,6 @@ api_router.include_router(security.users_router)
 api_router.include_router(security.sessions_router)
 api_router.include_router(security.activity_router)
 api_router.include_router(security.login_history_router)
-api_router.include_router(security.twofa_router)
 
 api_router.include_router(settings.router)
 api_router.include_router(dpdp.router)

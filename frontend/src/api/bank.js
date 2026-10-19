@@ -21,17 +21,21 @@ export const bankReconAPI = {
 }
 
 export const notificationAPI = {
+  list: () => api.get('/api/v1/notifications/'),
+  markRead: (id) => api.patch(`/api/v1/notifications/${id}/read`),
   getSettings: () => api.get('/api/v1/notifications/settings'),
   updateSettings: (d) => api.put('/api/v1/notifications/settings', d),
   testEmail: (email) => api.post('/api/v1/notifications/test-email', { to_email: email }),
 }
 
 export const scheduledAPI = {
+  status: () => api.get('/api/v1/scheduled-reports/status'),
   getSettings: () => api.get('/api/v1/scheduled-reports/settings'),
   updateSettings: (d) => api.put('/api/v1/scheduled-reports/settings', d),
 }
 
 export const backupAPI = {
+  run: () => api.post('/api/v1/backup/run'),
   status: () => api.get('/api/v1/backup/status'),
 }
 

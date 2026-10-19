@@ -79,7 +79,7 @@ class AdjustmentRequest(BaseModel):
 
 class NotificationSettingsUpdate(BaseModel):
     smtp_host: Optional[str] = None
-    smtp_port: Optional[int] = None
+    smtp_port: Optional[int] = Field(None, ge=1, le=65535)
     smtp_username: Optional[str] = None
     smtp_password: Optional[str] = None
     smtp_from_email: Optional[str] = None
@@ -99,7 +99,7 @@ class NotificationSettingsUpdate(BaseModel):
 
 class ScheduledReportSettings(BaseModel):
     daily_sales_enabled: bool = True
-    daily_sales_time: str = "08:00"
+    daily_sales_time: str = Field("08:00", pattern=r"^(?:[01]\d|2[0-3]):[0-5]\d$")
     weekly_outstanding_enabled: bool = True
     monthly_pnl_enabled: bool = True
     monthly_stock_enabled: bool = True

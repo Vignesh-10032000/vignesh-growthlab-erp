@@ -571,7 +571,21 @@ async def lifespan(app: FastAPI):
             _db.close()
     except Exception as _e:
         print(f"[STARTUP] session pruning skipped: {_e}")
-    yield
+    import asyncio
+    from contextlib import suppress
+    from app.services.automation_service import automation_loop, AutomationSettings
+    from app.db.session import SessionLocal
+    if settings.AUTOMATION_ENABLED:
+        with SessionLocal() as automation_db:
+            AutomationSettings.import_legacy(automation_db)
+    task = asyncio.create_task(automation_loop()) if settings.AUTOMATION_ENABLED else None
+    try:
+        yield
+    finally:
+        if task:
+            task.cancel()
+            with suppress(asyncio.CancelledError):
+                await task
 
 
 app = FastAPI(

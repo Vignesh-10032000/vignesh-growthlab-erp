@@ -493,7 +493,7 @@ class StockReportService:
                     "part_name": prod.part_name,
                     "category_name": cat.name if cat else None,
                     "unit_of_measure": prod.unit_of_measure,
-                    "selling_price": float(prod.selling_price),
+                    "selling_price": float(prod.b2b_price or 0),
                     "purchase_cost": float(prod.purchase_cost),
                     "low_stock_threshold": float(prod.low_stock_threshold),
                     "total_quantity": Decimal("0"),
@@ -512,6 +512,8 @@ class StockReportService:
 
         rows = list(product_map.values())
         for r in rows:
+            if r["total_quantity"]:
+                r["purchase_cost"] = float(r["total_fifo_value"] / r["total_quantity"])
             r["total_quantity"] = float(r["total_quantity"])
             r["total_fifo_value"] = float(r["total_fifo_value"])
             r["is_low_stock"] = r["total_quantity"] <= r["low_stock_threshold"]
