@@ -9,6 +9,54 @@ from app.db.session import Base
 import enum
 
 
+class AutomationSetting(Base):
+    __tablename__ = "automation_settings"
+    key = Column(String(50), primary_key=True)
+    value_json = Column(Text, nullable=False)
+
+
+class AutomationJob(Base):
+    __tablename__ = "automation_jobs"
+    key = Column(String(190), primary_key=True)
+    status = Column(String(30), nullable=False, default="pending")
+    lease_until = Column(DateTime, nullable=True)
+    attempts = Column(Integer, nullable=False, default=0)
+    last_error = Column(Text, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+
+
+class UserNotification(Base):
+    __tablename__ = "user_notifications"
+    id = Column(Integer, primary_key=True)
+    event_key = Column(String(160), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    warehouse_id = Column(Integer, ForeignKey("warehouses.id"), nullable=True)
+    page_key = Column(String(30), nullable=False)
+    subject = Column(String(200), nullable=False)
+    body = Column(Text, nullable=False)
+    is_read = Column(Boolean, nullable=False, default=False)
+    email_status = Column(String(30), nullable=False, default="pending")
+    attempts = Column(Integer, nullable=False, default=0)
+    lease_until = Column(DateTime, nullable=True)
+    last_error = Column(Text, nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    __table_args__ = (UniqueConstraint("event_key", "user_id", name="uq_notification_event_user"),)
+
+
+class OpeningSubmission(Base):
+    __tablename__ = "opening_submissions"
+    key = Column(String(64), primary_key=True)
+    payload_hash = Column(String(64), nullable=False)
+    response_json = Column(Text, nullable=True)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+
+class OpeningEntry(Base):
+    __tablename__ = "opening_entries"
+    key = Column(String(160), primary_key=True)
+    submission_key = Column(String(64), ForeignKey("opening_submissions.key"), nullable=False)
+
+
 # ─── Enums ──────────────────────────────────────────────────
 
 class UserRole(str, enum.Enum):

@@ -10,12 +10,16 @@ import { Plus, Trash2, Save, ArrowLeft, CheckCircle, Download, Upload } from 'lu
 import { format } from 'date-fns'
 import toast from 'react-hot-toast'
 
-const FY_OPTIONS = ['2025-26', '2024-25', '2023-24']
+const startYear = new Date().getMonth() >= 3 ? new Date().getFullYear() : new Date().getFullYear() - 1
+const FY_OPTIONS = Array.from({ length: 4 }, (_, i) => `${startYear - i}-${String(startYear - i + 1).slice(-2)}`)
 
 export default function OpeningBalancePage() {
   const navigate = useNavigate()
-  const [fy, setFy] = useState('2025-26')
-  const [openingDate, setOpeningDate] = useState(format(new Date(), 'yyyy-MM-dd'))
+  const [submissionId, setSubmissionId] = useState(() => crypto.randomUUID())
+  const [otherAssets, setOtherAssets] = useState('')
+  const [otherLiabilities, setOtherLiabilities] = useState('')
+  const [fy, setFy] = useState(FY_OPTIONS[0])
+  const [openingDate, setOpeningDate] = useState(`${startYear}-04-01`)
   const [stockItems, setStockItems] = useState([{ product_id: '', warehouse_id: '', quantity: '', unit_cost: '' }])
   const [customerBalances, setCustomerBalances] = useState([{ customer_id: '', opening_balance: '' }])
   const [vendorBalances, setVendorBalances] = useState([{ vendor_id: '', opening_balance: '' }])
@@ -40,7 +44,13 @@ export default function OpeningBalancePage() {
   })
 
   const handleSave = () => {
+    const incompleteStock = stockItems.some(i => Object.values(i).some(Boolean) && (!i.product_id || !i.warehouse_id || Number(i.quantity) <= 0 || Number(i.unit_cost) <= 0 || !i.quantity || !i.unit_cost))
+    const incompleteParty = [...customerBalances.map(c => [c.customer_id, c.opening_balance]), ...vendorBalances.map(v => [v.vendor_id, v.opening_balance])].some(([id, amount]) => (id || amount) && (!id || !amount || Number(amount) <= 0))
+    if (incompleteStock || incompleteParty) { toast.error('Complete each selected row with positive quantities and amounts'); return }
     const payload = {
+      submission_id: submissionId,
+      other_assets: Number(otherAssets || 0),
+      other_liabilities: Number(otherLiabilities || 0),
       financial_year: fy,
       opening_date: openingDate,
       stock_items: stockItems
@@ -128,7 +138,11 @@ export default function OpeningBalancePage() {
         <h2 className="text-xl font-semibold text-gray-800 mb-2">Opening Balances Saved</h2>
         <p className="text-gray-500 mb-6 text-sm">Your system is now ready for live transactions. All opening stock, customer balances, vendor balances, and bank balances have been recorded.</p>
         <div className="flex gap-3 justify-center">
-          <Button variant="secondary" onClick={() => { setDone(false) }}>Add More</Button>
+          <Button variant="secondary" onClick={() => {
+            setDone(false); setSubmissionId(crypto.randomUUID()); setStockItems([{ product_id: '', warehouse_id: '', quantity: '', unit_cost: '' }]);
+            setCustomerBalances([{ customer_id: '', opening_balance: '' }]); setVendorBalances([{ vendor_id: '', opening_balance: '' }]);
+            setCashBalance(''); setBankBalances([{ account_code: '', bank_name: '', account_number: '', amount: '' }]); setOtherAssets(''); setOtherLiabilities('')
+          }}>Add More</Button>
           <Button variant="primary" onClick={() => navigate('/')}>Go to Dashboard</Button>
         </div>
       </div>
@@ -160,7 +174,7 @@ export default function OpeningBalancePage() {
         <div className="form-section-body">
           <div className="grid grid-cols-2 gap-4">
             <Field label="Financial Year" required>
-              <Select value={fy} onChange={e => setFy(e.target.value)}>
+              <Select value={fy} onChange={e => { setFy(e.target.value); setOpeningDate(`${e.target.value.slice(0,4)}-04-01`); setSubmissionId(crypto.randomUUID()) }}>
                 {FY_OPTIONS.map(f => <option key={f} value={f}>{f}</option>)}
               </Select>
             </Field>
@@ -351,6 +365,10 @@ export default function OpeningBalancePage() {
         </div>
       </div>
 
+      <div className="card p-4 mb-4 grid grid-cols-2 gap-3">
+        <Field label="Other Assets"><Input type="number" min="0" step="0.01" value={otherAssets} onChange={e => setOtherAssets(e.target.value)} /></Field>
+        <Field label="Other Liabilities"><Input type="number" min="0" step="0.01" value={otherLiabilities} onChange={e => setOtherLiabilities(e.target.value)} /></Field>
+      </div>
       <div className="flex justify-between pb-6">
         <Button variant="secondary" onClick={() => navigate('/warehouse')}>Cancel</Button>
         <Button variant="primary" loading={mutation.isPending} onClick={handleSave}>

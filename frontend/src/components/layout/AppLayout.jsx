@@ -1,6 +1,8 @@
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/store/authStore'
 import { useState, useEffect } from 'react'
+import { pageKey } from '@/utils/pageAccess'
+import NotificationBell from '@/components/NotificationBell'
 import { clsx } from 'clsx'
 import {
   LayoutDashboard, Package, ShoppingCart, FileText, Warehouse,
@@ -122,7 +124,7 @@ function NavItem({ item, collapsed, onNavigate }) {
 }
 
 export default function AppLayout() {
-  const { user, logout } = useAuthStore()
+  const { user, logout, hasPageAccess } = useAuthStore()
   const navigate = useNavigate()
   const location = useLocation()
   const [collapsed, setCollapsed] = useState(false)
@@ -184,8 +186,8 @@ export default function AppLayout() {
         <nav className="flex-1 overflow-y-auto p-2 space-y-0.5">
           {NAV.filter(item =>
             (!item.superAdminOnly || user?.role === 'super_admin') &&
-            (!item.roles || item.roles.includes(user?.role))
-          ).map(item => (
+            (!item.roles || item.roles.includes(user?.role)) && hasPageAccess(pageKey(item.path))
+          ).map(item => ({ ...item, children: item.children?.filter(child => hasPageAccess(pageKey(child.path))) })).map(item => (
             <NavItem
               key={item.path}
               item={item}
@@ -257,9 +259,7 @@ export default function AppLayout() {
             <Menu size={18} />
           </button>
           <div className="flex items-center gap-2">
-            <button className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 relative">
-              <Bell size={18} />
-            </button>
+            <NotificationBell />
             <button onClick={() => navigate('/profile')}
               className="flex items-center gap-2 pl-2 border-l border-gray-200 hover:bg-gray-50 rounded-r-lg pr-2 py-1 transition-colors"
               title="My Profile">

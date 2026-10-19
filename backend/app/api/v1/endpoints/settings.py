@@ -511,6 +511,9 @@ async def update_user_permissions(
             detail="Cannot restrict page access for admin or super-admin users",
         )
     # Store None → NULL (full access); list → JSON string
+    from app.core.page_access import PAGE_KEYS
+    if payload.page_permissions is not None and set(payload.page_permissions) - PAGE_KEYS:
+        raise HTTPException(status_code=422, detail="Unknown page permission")
     u.page_permissions = (
         json.dumps(payload.page_permissions)
         if payload.page_permissions is not None

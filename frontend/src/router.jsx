@@ -1,4 +1,5 @@
-import { createBrowserRouter, RouterProvider, Navigate } from 'react-router-dom'
+import { createBrowserRouter, RouterProvider, Navigate, useLocation } from 'react-router-dom'
+import { pageKey } from '@/utils/pageAccess'
 import { useAuthStore } from '@/store/authStore'
 import AppLayout from '@/components/layout/AppLayout'
 import LoginPage from '@/pages/LoginPage'
@@ -26,7 +27,7 @@ import BankPage from '@/pages/bank/BankPage'
 import UsersPage from '@/pages/users/UsersPage'
 import ProfilePage from '@/pages/profile/ProfilePage'
 import SettingsPage from '@/pages/settings/SettingsPage'
-import OpeningBalancePage from '@/pages/settings/OpeningBalancePage'
+import OpeningBalancePage from '@/pages/opening/OpeningBalancePage'
 import ConfigAdminPage from '@/pages/settings/ConfigAdminPage'
 import { Navigate as Nav } from 'react-router-dom'
 import PriceTrendPage from '@/pages/products/PriceTrendPage'
@@ -61,6 +62,15 @@ function RequireRoles({ roles, children }) {
   return children
 }
 
+function RequirePageAccess({ children }) {
+  const location = useLocation()
+  const { hasPageAccess } = useAuthStore()
+  if (location.pathname !== '/profile' && !hasPageAccess(pageKey(location.pathname))) {
+    return <div className="p-8"><h1 className="text-xl font-semibold">Access restricted</h1><p>Your administrator has restricted access to this page.</p><a href="/profile">My profile</a></div>
+  }
+  return children
+}
+
 const router = createBrowserRouter([
   {
     path: '/login',
@@ -68,7 +78,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/',
-    element: <RequireAuth><AppLayout /></RequireAuth>,
+    element: <RequireAuth><RequirePageAccess><AppLayout /></RequirePageAccess></RequireAuth>,
     children: [
       // Dashboard
       { index: true, element: <DashboardPage /> },
@@ -101,7 +111,7 @@ const router = createBrowserRouter([
 
       // Warehouse
       { path: 'warehouse',                      element: <WarehousePage /> },
-      //{ path: 'warehouse/opening-balances',     element: <OpeningBalancePage /> },
+      { path: 'warehouse/opening-balances', element: <RequireSuperAdmin><Navigate to="/settings/opening-balance" replace /></RequireSuperAdmin> },
 
       // Accounting
       { path: 'accounting',            element: <AccountingPage /> },

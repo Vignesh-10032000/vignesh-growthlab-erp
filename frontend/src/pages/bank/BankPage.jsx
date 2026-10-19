@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { bankStmtAPI, bankReconAPI, notificationAPI, scheduledAPI, backupAPI } from '@/api/bank'
+import { useAuthStore } from '@/store/authStore'
 import { settingsAPI } from '@/api/settings'
 import { Button, Badge, Field, Input, Select, AlertBox, Spinner, Empty } from '@/components/ui'
 import { Plus, Lock, CheckCircle, X, Mail, Bell, Clock, Database, Link2, Unlink, Trash2, Upload } from 'lucide-react'
@@ -527,11 +528,14 @@ function NotificationsTab() {
 
   const testMutation = useMutation({
     mutationFn: () => notificationAPI.testEmail(testEmail),
+    onError: e => toast.error(e.response?.data?.detail || 'Email delivery failed'),
     onSuccess: (res) => {
       if (res.data.success) toast.success(res.data.message)
       else toast.error(res.data.message)
     },
   })
+
+  useEffect(() => { if (settings) reset(settings) }, [settings, reset])
 
   if (isLoading) return <div className="flex justify-center py-8"><Spinner size={24} /></div>
 
@@ -546,7 +550,7 @@ function NotificationsTab() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Username"><Input defaultValue={settings?.smtp_username} {...register('smtp_username')} placeholder="your@gmail.com" /></Field>
-            <Field label="Password"><Input type="password" defaultValue={settings?.smtp_password} {...register('smtp_password')} placeholder="App password" /></Field>
+            <Field label="Password"><Input type="password" defaultValue={settings?.smtp_password} {...register('smtp_password')} placeholder={settings?.smtp_password_configured ? "Saved password (leave blank to keep)" : "App password"} /></Field>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="From Email"><Input defaultValue={settings?.smtp_from_email} {...register('smtp_from_email')} placeholder="erp@company.com" /></Field>
@@ -599,12 +603,15 @@ function NotificationsTab() {
 function ScheduledReportsTab() {
   const qc = useQueryClient()
   const { data: settings, isLoading } = useQuery({ queryKey: ['scheduled-settings'], queryFn: () => scheduledAPI.getSettings().then(r => r.data) })
-  const { register, handleSubmit } = useForm()
+  const { register, handleSubmit, reset } = useForm()
+  const { data: jobStatus } = useQuery({ queryKey: ['scheduled-status'], queryFn: () => scheduledAPI.status().then(r => r.data), refetchInterval: 30000 })
 
   const updateMutation = useMutation({
     mutationFn: (d) => scheduledAPI.updateSettings(d),
     onSuccess: () => { qc.invalidateQueries(['scheduled-settings']); toast.success('Scheduled report settings saved') },
   })
+
+  useEffect(() => { if (settings) reset(settings) }, [settings, reset])
 
   if (isLoading) return <div className="flex justify-center py-8"><Spinner size={24} /></div>
 
@@ -634,7 +641,7 @@ function ScheduledReportsTab() {
           <Field label="Daily Report Time">
             <Input type="time" defaultValue={settings?.daily_sales_time || '08:00'} {...register('daily_sales_time')} className="w-36" />
           </Field>
-          <Field label="Recipient Emails" hint="Comma-separated email addresses">
+          <Field label="Recipient Emails" hint="Comma-separated email addresses of active ERP users">
             <Input defaultValue={settings?.recipient_emails?.join(', ')} {...register('recipient_emails_raw')} placeholder="admin@company.com, manager@company.com" />
           </Field>
           <Button variant="primary" onClick={handleSubmit(d => {
@@ -646,8 +653,11 @@ function ScheduledReportsTab() {
           </Button>
         </div>
       </div>
+      {jobStatus && <div className="card p-4 text-sm"><p>Scheduler: {jobStatus.scheduler_enabled ? 'Enabled' : 'Disabled'}</p><p>Email delivery: {jobStatus.email_delivery_enabled ? 'Enabled' : 'Requires configuration'}</p>
+        {jobStatus.jobs?.slice(0, 10).map(job => <div key={job.key} className="flex justify-between border-t py-1"><span>{job.key.split(':').slice(0,2).join(' — ')}</span><span>{job.status}</span></div>)}
+      </div>}
       <AlertBox type="info">
-        Scheduled reports are sent via Celery background workers. Ensure Redis is running and the Celery worker is started with: <code className="bg-gray-100 px-1 rounded">celery -A app.celery worker --loglevel=info</code>
+        Reports run in the ERP scheduler in Asia/Kolkata time. Email delivery requires configured SMTP and an enabled delivery setting. Reports are sent only to active users with permission to view them.
       </AlertBox>
     </div>
   )
@@ -655,6 +665,12 @@ function ScheduledReportsTab() {
 
 // ── Backup Status Tab ─────────────────────────────────────────
 function BackupStatusTab() {
+  const qc = useQueryClient()
+  const { isSuperAdmin } = useAuthStore()
+  const runBackup = useMutation({ mutationFn: () => backupAPI.run(),
+    onSuccess: () => { toast.success('Backup completed'); qc.invalidateQueries({ queryKey: ['backup-status'] }) },
+    onError: e => { toast.error(e.response?.data?.detail || 'Backup failed'); qc.invalidateQueries({ queryKey: ['backup-status'] }) },
+  })
   const { data: status, isLoading } = useQuery({
     queryKey: ['backup-status'],
     queryFn: () => backupAPI.status().then(r => r.data),
@@ -685,21 +701,8 @@ function BackupStatusTab() {
             {status.note}
           </AlertBox>
 
-          <div className="card">
-            <div className="card-header"><h3 className="font-semibold text-sm">Backup Script</h3></div>
-            <div className="card-body">
-              <div className="text-xs text-gray-500 mb-2">Add this to your crontab (Linux) to backup daily at 2am:</div>
-              <code className="block bg-gray-900 text-green-400 text-xs p-3 rounded-lg whitespace-pre">
-{`# Edit crontab: crontab -e
-0 2 * * * /usr/bin/mysqldump -u erp_user -perp_password wholesale_erp | gzip > /var/backups/wholesale_erp/backup_$(date +\\%Y\\%m\\%d).sql.gz`}
-              </code>
-              <div className="text-xs text-gray-500 mt-3 mb-2">Windows Task Scheduler batch script:</div>
-              <code className="block bg-gray-900 text-green-400 text-xs p-3 rounded-lg whitespace-pre">
-{`REM backup.bat
-"C:\\Program Files\\MariaDB 11.4\\bin\\mysqldump.exe" -u erp_user -perp_password wholesale_erp > C:\\backups\\backup_%date:~-4,4%%date:~-7,2%%date:~-10,2%.sql`}
-              </code>
-            </div>
-          </div>
+          {status.last_attempt_status === 'failed' && <AlertBox type="warning">The last backup attempt failed. Ask your administrator to check backup storage and database access.</AlertBox>}
+          {isSuperAdmin() && <Button variant="primary" disabled={!status.enabled} loading={runBackup.isPending} onClick={() => runBackup.mutate()}>Run Backup</Button>}
 
           {status.backups?.length > 0 && (
             <div className="card mt-4">

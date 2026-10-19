@@ -152,27 +152,27 @@ class StockWriteoffResponse(BaseModel):
 class OpeningStockItem(BaseModel):
     product_id: int
     warehouse_id: int
-    quantity: Decimal = Field(..., gt=0)
-    unit_cost: Decimal = Field(..., gt=0)
+    quantity: Decimal = Field(..., gt=0, max_digits=12, decimal_places=3, allow_inf_nan=False)
+    unit_cost: Decimal = Field(..., gt=0, max_digits=12, decimal_places=2, allow_inf_nan=False)
     opening_date: date
 
 
 class OpeningCustomerBalance(BaseModel):
     customer_id: int
-    opening_balance: Decimal = Field(..., gt=0)
+    opening_balance: Decimal = Field(..., gt=0, max_digits=14, decimal_places=2, allow_inf_nan=False)
     opening_date: date
     notes: Optional[str] = None
 
 
 class OpeningVendorBalance(BaseModel):
     vendor_id: int
-    opening_balance: Decimal = Field(..., gt=0)
+    opening_balance: Decimal = Field(..., gt=0, max_digits=14, decimal_places=2, allow_inf_nan=False)
     opening_date: date
     notes: Optional[str] = None
 
 
 class OpeningCashBalance(BaseModel):
-    amount: Decimal = Field(..., ge=0)
+    amount: Decimal = Field(..., ge=0, max_digits=14, decimal_places=2, allow_inf_nan=False)
     opening_date: date
     notes: Optional[str] = None
 
@@ -181,12 +181,13 @@ class OpeningBankBalance(BaseModel):
     account_code: str
     bank_name: str
     account_number: str
-    amount: Decimal = Field(..., ge=0)
+    amount: Decimal = Field(..., ge=0, max_digits=14, decimal_places=2, allow_inf_nan=False)
     opening_date: date
     notes: Optional[str] = None
 
 
 class OpeningBalanceCreate(BaseModel):
+    submission_id: Optional[str] = Field(None, min_length=1, max_length=64, pattern=r"^[a-zA-Z0-9_-]+$")
     financial_year: str
     opening_date: date
     stock_items: List[OpeningStockItem] = []
@@ -194,6 +195,8 @@ class OpeningBalanceCreate(BaseModel):
     vendor_balances: List[OpeningVendorBalance] = []
     cash_balance: Optional[OpeningCashBalance] = None
     bank_balances: List[OpeningBankBalance] = []
+    other_assets: Decimal = Field(Decimal("0"), ge=0, max_digits=14, decimal_places=2, allow_inf_nan=False)
+    other_liabilities: Decimal = Field(Decimal("0"), ge=0, max_digits=14, decimal_places=2, allow_inf_nan=False)
 
 
 # ── Stock Report Schemas ──────────────────────────────────────

@@ -1149,92 +1149,8 @@ class OpeningBalanceService:
 
     @staticmethod
     def create(db: Session, payload: OpeningBalanceCreate, user_id: int) -> dict:
-        from app.models.models import (
-            LedgerEntry, TransactionType, Customer, Vendor,
-            Account
-        )
-        created_records = {"stock": 0, "customers": 0, "vendors": 0, "cash": 0, "bank": 0}
-
-        # Opening stock
-        for item in payload.stock_items:
-            product = db.query(Product).filter(Product.id == item.product_id).first()
-            if not product:
-                raise HTTPException(status_code=404, detail=f"Product {item.product_id} not found")
-            StockService.add_stock(
-                db, item.product_id, item.warehouse_id, item.quantity, item.unit_cost,
-                StockTransactionType.adjustment_in, "opening_balance", 0,
-                item.opening_date, user_id
-            )
-            created_records["stock"] += 1
-
-        # Customer opening balances
-        for cb in payload.customer_balances:
-            customer = db.query(Customer).filter(Customer.id == cb.customer_id).first()
-            if not customer:
-                continue
-            le = LedgerEntry(
-                customer_id=cb.customer_id,
-                transaction_type=TransactionType.debit,
-                amount=cb.opening_balance,
-                balance=cb.opening_balance,
-                reference_type="opening_balance",
-                reference_id=0,
-                narration=f"Opening balance — {customer.trade_name}",
-                entry_date=cb.opening_date,
-                financial_year=payload.financial_year,
-            )
-            db.add(le)
-            created_records["customers"] += 1
-
-        # Vendor opening balances
-        from app.models.models import Vendor
-        for vb in payload.vendor_balances:
-            vendor = db.query(Vendor).filter(Vendor.id == vb.vendor_id).first()
-            if not vendor:
-                continue
-            le = LedgerEntry(
-                vendor_id=vb.vendor_id,
-                transaction_type=TransactionType.credit,
-                amount=vb.opening_balance,
-                balance=vb.opening_balance,
-                reference_type="opening_balance",
-                reference_id=0,
-                narration=f"Opening balance — {vendor.trade_name}",
-                entry_date=vb.opening_date,
-                financial_year=payload.financial_year,
-            )
-            db.add(le)
-            created_records["vendors"] += 1
-
-        # Cash opening balance
-        if payload.cash_balance:
-            cash_acc = get_or_create_account(db, "CASH")
-            if cash_acc:
-                cash_acc.opening_balance = payload.cash_balance.amount
-                created_records["cash"] = 1
-
-        # Bank opening balances
-        for bb in payload.bank_balances:
-            bank_acc = db.query(Account).filter(Account.account_code == bb.account_code).first()
-            if not bank_acc:
-                bank_acc = Account(
-                    account_code=bb.account_code,
-                    account_name=f"{bb.bank_name} — {bb.account_number}",
-                    account_type="bank",
-                    opening_balance=bb.amount,
-                    created_by=user_id,
-                )
-                db.add(bank_acc)
-            else:
-                bank_acc.opening_balance = bb.amount
-            created_records["bank"] += 1
-
-        db.commit()
-        return {
-            "message": "Opening balances created successfully",
-            "created": created_records,
-            "financial_year": payload.financial_year,
-        }
+        from app.services.opening_service import OpeningPostingService
+        return OpeningPostingService.create(db, payload, user_id)
 
     @staticmethod
     def get_stock_csv_template() -> str:
@@ -1245,96 +1161,32 @@ class OpeningBalanceService:
     @staticmethod
     def bulk_upload_stock(db: Session, file_content: str,
                           default_opening_date: date, user_id: int) -> dict:
-        """Bulk-load opening stock from CSV.
-
-        Columns: part_code, warehouse_name, quantity, unit_cost, opening_date (optional).
-        Products are matched by part_code, warehouses by name (case-insensitive).
-        opening_date falls back to default_opening_date when a row leaves it blank.
-        Each valid row creates an 'opening_balance' FIFO layer (adjustment_in) — same
-        path as the JSON endpoint. Adds to existing stock; it does not replace it.
-        """
-        reader = csv.DictReader(io.StringIO(file_content))
-        required_cols = {"part_code", "warehouse_name", "quantity", "unit_cost"}
-        if not required_cols.issubset(set(reader.fieldnames or [])):
-            raise HTTPException(
-                status_code=400,
-                detail=f"Missing columns. Required: {sorted(required_cols)}",
-            )
-
-        errors = []
-        created = []
-        rows = list(reader)
-
-        for idx, row in enumerate(rows, start=2):
-            row_errors = []
-
-            part_code = (row.get("part_code") or "").strip()
-            product = None
-            if not part_code:
-                row_errors.append("part_code is required")
-            else:
-                product = db.query(Product).filter(
-                    Product.part_code == part_code
-                ).first()
-                if not product:
-                    row_errors.append(f"Product part_code '{part_code}' not found")
-
-            wh_name = (row.get("warehouse_name") or "").strip()
-            warehouse = None
-            if not wh_name:
-                row_errors.append("warehouse_name is required")
-            else:
-                warehouse = db.query(Warehouse).filter(
-                    func.lower(Warehouse.name) == wh_name.lower(),
-                    Warehouse.is_active == True,
-                ).first()
-                if not warehouse:
-                    row_errors.append(f"Warehouse '{wh_name}' not found")
-
-            quantity = None
+        from app.schemas.warehouse import OpeningStockItem
+        from pydantic import ValidationError
+        reader = csv.DictReader(io.StringIO(file_content.lstrip("\ufeff")))
+        required = {"part_code", "warehouse_name", "quantity", "unit_cost"}
+        if not required.issubset(set(reader.fieldnames or [])):
+            raise HTTPException(400, f"Missing columns. Required: {sorted(required)}")
+        rows, items, errors = list(reader), [], []
+        if not rows:
+            raise HTTPException(422, "CSV contains no stock rows")
+        for idx, row in enumerate(rows, 2):
+            product = db.query(Product).filter(Product.part_code == (row.get("part_code") or "").strip(), Product.is_active == True).first()
+            warehouse = db.query(Warehouse).filter(func.lower(Warehouse.name) == (row.get("warehouse_name") or "").strip().lower(), Warehouse.is_active == True).first()
             try:
-                quantity = Decimal((row.get("quantity") or "").strip())
-                if quantity <= 0:
-                    row_errors.append("quantity must be greater than 0")
-            except Exception:
-                row_errors.append(f"Invalid quantity: '{row.get('quantity')}'")
-
-            unit_cost = None
-            try:
-                unit_cost = Decimal((row.get("unit_cost") or "").strip())
-                if unit_cost <= 0:
-                    row_errors.append("unit_cost must be greater than 0")
-            except Exception:
-                row_errors.append(f"Invalid unit_cost: '{row.get('unit_cost')}'")
-
-            opening_date = default_opening_date
-            raw_date = (row.get("opening_date") or "").strip()
-            if raw_date:
-                try:
-                    opening_date = datetime.strptime(raw_date, "%Y-%m-%d").date()
-                except ValueError:
-                    row_errors.append(f"Invalid opening_date (use YYYY-MM-DD): '{raw_date}'")
-
-            if row_errors:
-                errors.append({"row": idx, "data": part_code, "errors": row_errors})
-                continue
-
-            try:
-                with db.begin_nested():
-                    StockService.add_stock(
-                        db, product.id, warehouse.id, quantity, unit_cost,
-                        StockTransactionType.adjustment_in, "opening_balance", 0,
-                        opening_date, user_id,
-                    )
-                created.append(part_code)
-            except Exception as e:
-                errors.append({"row": idx, "data": part_code, "errors": [str(e)]})
-
-        db.commit()
-        return {
-            "total_rows": len(rows),
-            "success_count": len(created),
-            "error_count": len(errors),
-            "errors": errors,
-            "created": created,
-        }
+                if not product or not warehouse:
+                    raise ValueError("Product or warehouse not found or inactive")
+                opening_date = date.fromisoformat(row["opening_date"].strip()) if row.get("opening_date", "").strip() else default_opening_date
+                if opening_date != default_opening_date:
+                    raise ValueError("All rows must use the selected opening date")
+                items.append(OpeningStockItem(product_id=product.id, warehouse_id=warehouse.id,
+                    quantity=row.get("quantity"), unit_cost=row.get("unit_cost"), opening_date=opening_date))
+            except (ValueError, ValidationError, TypeError) as exc:
+                errors.append({"row": idx, "data": row.get("part_code"), "errors": [str(exc)]})
+        if errors:
+            return {"total_rows": len(rows), "success_count": 0, "error_count": len(errors), "errors": errors, "created": []}
+        payload = OpeningBalanceCreate(financial_year=get_financial_year(default_opening_date),
+                                       opening_date=default_opening_date, stock_items=items)
+        result = OpeningBalanceService.create(db, payload, user_id)
+        return {"total_rows": len(rows), "success_count": len(items), "error_count": 0,
+                "errors": [], "created": [r["part_code"] for r in rows], "submission_id": result["submission_id"]}

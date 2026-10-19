@@ -124,7 +124,7 @@ async def get_me(current_user: User = Depends(get_current_user), db: Session = D
     if not fresh:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session invalidated. Please log in again.")
     role = fresh.role.value if hasattr(fresh.role, "value") else fresh.role
-    return {"id": fresh.id, "username": fresh.username, "full_name": fresh.full_name, "email": fresh.email, "role": role, "page_permissions": json.loads(getattr(fresh, "page_permissions", None)) if getattr(fresh, "page_permissions", None) else None}
+    return {"id": fresh.id, "username": fresh.username, "full_name": fresh.full_name, "email": fresh.email, "role": role, "warehouse_id": fresh.warehouse_id, "warehouse_ids": [w.warehouse_id for w in fresh.admin_warehouses], "page_permissions": json.loads(getattr(fresh, "page_permissions", None)) if getattr(fresh, "page_permissions", None) else None}
 
 
 @router.post("/refresh")

@@ -250,112 +250,64 @@ class BankReconciliationService:
 
 
 class NotificationService:
-    SETTINGS_FILE = "/tmp/erp_notifications.json"
+    @staticmethod
+    def get_settings():
+        from app.db.session import SessionLocal
+        from app.services.automation_service import AutomationSettings
+        with SessionLocal() as db:
+            return AutomationSettings.get(db, "notifications")
 
     @staticmethod
-    def get_settings() -> dict:
-        defaults = {
-            "smtp_host": "smtp.gmail.com", "smtp_port": 587,
-            "smtp_username": "", "smtp_password": "",
-            "smtp_from_email": "", "admin_email": "", "accountant_email": "",
-            "notify_overdue": True, "notify_low_stock": True,
-            "notify_large_invoice": True, "large_invoice_threshold": 100000,
-            "notify_einvoice_failure": True, "notify_cheque_bounce": True,
-            "notify_daily_summary": True, "notify_unknown_ip": True,
-            "notify_vendor_due": True, "notify_backup": True,
-        }
-        try:
-            if os.path.exists(NotificationService.SETTINGS_FILE):
-                with open(NotificationService.SETTINGS_FILE) as f:
-                    return {**defaults, **json.load(f)}
-        except Exception:
-            pass
-        return defaults
+    def update_settings(payload):
+        from app.db.session import SessionLocal
+        from app.services.automation_service import AutomationSettings
+        with SessionLocal() as db:
+            return AutomationSettings.update(db, "notifications", payload)
 
     @staticmethod
-    def update_settings(payload: NotificationSettingsUpdate) -> dict:
-        current = NotificationService.get_settings()
-        current.update({k: v for k, v in payload.dict().items() if v is not None})
-        try:
-            with open(NotificationService.SETTINGS_FILE, "w") as f:
-                json.dump(current, f, indent=2, default=str)
-        except Exception:
-            pass
-        return current
-
-    @staticmethod
-    def test_email(to_email: str) -> dict:
-        try:
-            import smtplib
-            from email.mime.text import MIMEText
-            cfg = NotificationService.get_settings()
-            msg = MIMEText("Test email from Wholesale ERP. Notifications are configured correctly.")
-            msg["Subject"] = "Wholesale ERP — Test Email"
-            msg["From"] = cfg.get("smtp_from_email", "erp@company.com")
-            msg["To"] = to_email
-            with smtplib.SMTP(cfg["smtp_host"], cfg["smtp_port"]) as s:
-                s.starttls()
-                if cfg.get("smtp_username"):
-                    s.login(cfg["smtp_username"], cfg["smtp_password"])
-                s.sendmail(msg["From"], [to_email], msg.as_string())
-            return {"success": True, "message": f"Test email sent to {to_email}"}
-        except Exception as e:
-            return {"success": False, "message": str(e)}
+    def test_email(to_email):
+        from app.db.session import SessionLocal
+        from app.services.automation_service import AutomationSettings, send_email
+        from fastapi import HTTPException
+        from sqlalchemy import func
+        with SessionLocal() as db:
+            AutomationSettings.validate_recipients(db, [to_email])
+            user = db.query(User).filter(func.lower(User.email) == to_email.lower(), User.is_active.is_(True)).first()
+            try:
+                send_email(db, user, "ERP test email", "Email delivery is configured correctly.")
+                return {"success": True, "message": "Test email sent"}
+            except HTTPException:
+                raise
+            except Exception:
+                raise HTTPException(502, "SMTP delivery failed; check configuration and server availability")
 
 
 class ScheduledReportService:
-    SETTINGS_FILE = "/tmp/erp_scheduled_reports.json"
+    @staticmethod
+    def get_settings():
+        from app.db.session import SessionLocal
+        from app.services.automation_service import AutomationSettings
+        with SessionLocal() as db:
+            return AutomationSettings.get(db, "reports")
 
     @staticmethod
-    def get_settings() -> dict:
-        defaults = {
-            "daily_sales_enabled": True, "daily_sales_time": "08:00",
-            "weekly_outstanding_enabled": True, "monthly_pnl_enabled": True,
-            "monthly_stock_enabled": True, "monthly_gst_enabled": True,
-            "monthly_bank_statement_reminder": True, "recipient_emails": [],
-        }
-        try:
-            if os.path.exists(ScheduledReportService.SETTINGS_FILE):
-                with open(ScheduledReportService.SETTINGS_FILE) as f:
-                    return {**defaults, **json.load(f)}
-        except Exception:
-            pass
-        return defaults
-
-    @staticmethod
-    def update_settings(payload: ScheduledReportSettings) -> dict:
-        data = payload.dict()
-        try:
-            with open(ScheduledReportService.SETTINGS_FILE, "w") as f:
-                json.dump(data, f, indent=2)
-        except Exception:
-            pass
-        return data
+    def update_settings(payload):
+        from app.db.session import SessionLocal
+        from app.services.automation_service import AutomationSettings
+        with SessionLocal() as db:
+            return AutomationSettings.update(db, "reports", payload)
 
 
 class BackupService:
     @staticmethod
-    def get_status() -> dict:
-        backup_dir = "/var/backups/wholesale_erp"
-        backups = []
-        try:
-            if os.path.exists(backup_dir):
-                files = sorted([f for f in os.listdir(backup_dir) if f.endswith((".sql", ".sql.gz"))], reverse=True)[:30]
-                for f in files:
-                    path = os.path.join(backup_dir, f)
-                    stat = os.stat(path)
-                    backups.append({
-                        "filename": f, "size_mb": round(stat.st_size / 1024 / 1024, 2),
-                        "created_at": datetime.fromtimestamp(stat.st_mtime).isoformat(), "status": "success",
-                    })
-        except Exception:
-            pass
-        last = backups[0] if backups else None
-        return {
-            "last_backup_time": last["created_at"] if last else None,
-            "last_backup_status": "success" if last else "no_backups_found",
-            "last_backup_size_mb": last["size_mb"] if last else None,
-            "backup_count_last_30_days": len(backups),
-            "backups": backups,
-            "note": "Configure daily backup via cron (Linux) or Task Scheduler (Windows). See scripts/setup-linux.sh",
-        }
+    def get_status():
+        from app.services.automation_service import BackupRunner
+        from app.models.models import AutomationJob
+        from app.db.session import SessionLocal
+        status = BackupRunner.status()
+        with SessionLocal() as db:
+            last = db.query(AutomationJob).filter(AutomationJob.key.like("backup:%")).order_by(AutomationJob.completed_at.desc()).first()
+            if last:
+                status["last_attempt_status"] = last.status
+                status["last_attempt_error"] = last.last_error
+        return status

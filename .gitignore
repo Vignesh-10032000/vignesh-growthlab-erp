@@ -83,3 +83,8 @@ $RECYCLE.BIN/
 # Claude Code
 # ============================================================
 .claude/settings.local.json
+.serena/
+test-results/
+playwright-report/
+*.partial
+keploy/reports/

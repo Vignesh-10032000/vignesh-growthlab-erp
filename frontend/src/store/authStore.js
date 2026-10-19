@@ -39,14 +39,14 @@ export const useAuthStore = create((set, get) => ({
     const { data } = await authAPI.login({ username, password })
     sessionStorage.setItem('access_token', data.access_token)
     sessionStorage.setItem('refresh_token', data.refresh_token)
-    set({ user: data.user })
+    set({ user: data.user, warehouse_id: data.user.warehouse_id || null })
     return data.user
   },
 
   logout: async () => {
     try { await authAPI.logout() } catch {}
     sessionStorage.clear()
-    set({ user: null })
+    set({ user: null, warehouse_id: null })
   },
 
   updateUser: (updates) => set(state => ({ user: { ...(state.user || {}), ...updates } })),

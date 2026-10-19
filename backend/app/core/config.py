@@ -12,6 +12,15 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    AUTOMATION_ENABLED: bool = True
+    AUTOMATION_INTERVAL_SECONDS: int = 30
+    AUTOMATION_EMAIL_ENABLED: bool = False
+    AUTOMATION_SMTP_TLS: bool = True
+    BACKUP_ENABLED: bool = False
+    BACKUP_DIR: str = "./backups"
+    BACKUP_RETENTION_DAYS: int = 30
+    BACKUP_DUMP_EXECUTABLE: str = "mariadb-dump"
+    BACKUP_TIMEOUT_SECONDS: int = 300
 
     # Database
     DATABASE_URL: str = "mysql+pymysql://erp_user:erp_password@localhost:3306/wholesale_erp"
